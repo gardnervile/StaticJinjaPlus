@@ -1,0 +1,4 @@
+FROM python:3.10-slim
+WORKDIR /opt/app
+COPY . .
+CMD ["python", "main.py", "--srcpath", "templates_example"]
