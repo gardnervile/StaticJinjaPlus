@@ -1,5 +1,28 @@
+# syntax=docker/dockerfile:1.6
 FROM ubuntu:22.04
-RUN apt-get update && apt-get install -y python3 python3-pip git && rm -rf /var/lib/apt/lists/*
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-venv python3-setuptools python3-wheel \
+        ca-certificates tzdata tar gzip && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /opt/app
-COPY . .
+
+ARG ARCHIVE_URL
+ARG ARCHIVE_CHECKSUM
+
+ADD --checksum=${ARCHIVE_CHECKSUM} ${ARCHIVE_URL} /tmp/src.tar.gz
+
+RUN set -eux; \
+    tar -xzf /tmp/src.tar.gz --strip-components=1 -C /opt/app; \
+    rm /tmp/src.tar.gz; \
+    python3 -m pip install --upgrade pip setuptools wheel; \
+    pip install -r /opt/app/requirements.txt
+
 CMD ["python3", "main.py", "--srcpath", "templates_example"]

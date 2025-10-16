@@ -1,4 +1,26 @@
+# syntax=docker/dockerfile:1.6
 FROM python:3.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates tzdata tar gzip \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /opt/app
-COPY . .
+
+ARG ARCHIVE_URL
+ARG ARCHIVE_CHECKSUM
+
+ADD --checksum=${ARCHIVE_CHECKSUM} ${ARCHIVE_URL} /tmp/src.tar.gz
+
+RUN set -eux; \
+    tar -xzf /tmp/src.tar.gz --strip-components=1 -C /opt/app; \
+    rm /tmp/src.tar.gz; \
+    python -m pip install --upgrade pip setuptools wheel; \
+    pip install -r /opt/app/requirements.txt
+
 CMD ["python", "main.py", "--srcpath", "templates_example"]
